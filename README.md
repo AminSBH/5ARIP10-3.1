@@ -19,3 +19,13 @@ print(device)
 ```
 To fit the Efficient Unet ++
 ```python
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+#device = 'cpu'
+print(device)
+```
+## Stent Prediction
+To view the main stent prediction model, see the code inside 'stent_size_prediction.ipynb'
+```python
+
+```
+
