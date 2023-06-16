@@ -224,37 +224,37 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import sklearn.metrics as metrics
 ```
 Load the data
-'''python
+```python
 path = 'Dataset.xlsx'
 data = pd.read_excel(path)
 label = 'Vessels ISR'
 data.head()
 data.loc[data['Vessels ISR'] > 1, 'Vessels ISR'] = 1
 print(data)
-'''
+```
 Divide the data into training and test sets and use TabularPredictor to predict data
-'''python
+```python
 train_data, test_data = train_test_split(data, test_size=0.2, random_state=42)
 
 predictor = TabularPredictor(label=label,sample_weight='balance_weight')
 predictor.fit(train_data)
 predictions = predictor.predict(test_data)
-'''
+```
 View the leaderboard of different models
-'''python
+```python
 predictor.leaderboard(test_data, silent=True)
-'''
+```
 View the most important features by correlation
-'''python
+```python
 feature_columns = data.columns.tolist() 
 feature_columns.remove(label)
 features = data[feature_columns]
 correlations = features.corrwith(data[label])
 sorted_correlations = correlations.abs().sort_values(ascending=False)
 print(sorted_correlations)
-'''
+```
 View the most important features by Autogluon
-'''python
+```python
 predictor.feature_importance(data=train_data)
-'''
+```
 
