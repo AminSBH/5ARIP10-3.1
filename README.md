@@ -5,8 +5,6 @@ In order to install the github repository, run the following code inside your Vi
 ```python
 git clone https://github.com/AminSBH/5ARIP10-3.1.git
 ```
-The following packages need to be installed:
-
 
 ## Vessel Segmentation
 
