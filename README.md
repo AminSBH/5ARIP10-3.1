@@ -17,90 +17,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 #device = 'cpu'
 print(device)
 ```
-To fit the Efficient Unet ++
+The training and test datasets should be normalised in order to fit the EfficientUnet++ model
 ```python
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-#device = 'cpu'
-print(device)
-```
-
-```python
-#image paths
-dir_train_x = 'data/training/images/'
-label_path = 'data/training/1st_manual/'
-dir_test_x = 'data/test/images/'
-label_test_path = 'data/test/1st_manual/'
-dir_valid_x = 'data/valid/images/'
-label_valid_path = 'data/valid/1st_manual/'
-
-images = list()
-labels = list()
-images_test = list()
-labels_test = list()
-images_valid = list()
-labels_valid = list()
-
-for file in Path(dir_train_x).iterdir():
-    if not file.is_file():
-        continue
-    img_rgb = imageio.v2.imread(file)
-    img_real = cv2.cvtColor(img_rgb, cv2.COLOR_GRAY2RGB)
-    images.append(img_real)
-
-for file in Path(label_path).iterdir():
-    if not file.is_file():
-        continue
-
-    img_rgb = imageio.v2.imread(file)
-    labels.append(img_rgb)
-    
-for file in Path(dir_test_x).iterdir():
-    if not file.is_file():
-        continue
-    img_rgb = imageio.v2.imread(file)
-    img_two = cv2.cvtColor(img_rgb, cv2.COLOR_GRAY2RGB)
-    images_test.append(img_two)
-
-for file in Path(label_test_path).iterdir():
-    if not file.is_file():
-        continue
-    img_rgb = imageio.v2.imread(file)
-    labels_test.append(img_rgb)
-    
-for file in Path(dir_valid_x).iterdir():
-    if not file.is_file():
-        continue
-    img_rgb = imageio.v2.imread(file)
-    img_two = cv2.cvtColor(img_rgb, cv2.COLOR_GRAY2RGB)
-    images_valid.append(img_two)
-
-for file in Path(label_valid_path).iterdir():
-    if not file.is_file():
-        continue
-    img_rgb = imageio.v2.imread(file)
-    labels_valid.append(img_rgb)
-
-def resize(imgs,resize_height, resize_width):
-    img_resize = []
-    for file in imgs:
-        img_resize.append(cv2.resize(file,(resize_height,resize_width)))
-    return img_resize
-
-resize_height, resize_width = (512, 512)
-imgs = resize(images,resize_height, resize_width)
-lbls = resize(labels,resize_height, resize_width)
-imgs_test = resize(images_test,resize_height, resize_width)
-lbls_test = resize(labels_test,resize_height, resize_width)
-imgs_valid = resize(images_valid,resize_height, resize_width)
-lbls_valid = resize(labels_valid,resize_height, resize_width)
-
-X_train = np.array(imgs)
-Y_train = np.array(lbls)
-X_test = np.array(imgs_test)
-Y_test = np.array(lbls_test)
-X_valid = np.array(imgs_valid)
-Y_valid = np.array(lbls_valid)
-
 X_train = X_train.astype('float32')/255
 Y_train = Y_train.astype('float32')/255
 X_test = X_test.astype('float32')/255
@@ -108,9 +26,9 @@ Y_test = Y_test.astype('float32')/255
 X_valid = X_valid.astype('float32')/255
 Y_valid = Y_valid.astype('float32')/255
 
-print("Pre-processing is finished.")
 ```
 
+The datasets are rearranged in order to fit the BxCxHxW format for the segmentation model, where B is the batch size, H is the height of the image and W the width of the image.
 ```python
 X_train = np.transpose(X_train, (0, 3, 1, 2))
 training_set = utils.data.TensorDataset(torch.Tensor(X_train), torch.Tensor(Y_train))
@@ -121,7 +39,7 @@ valid_set = utils.data.TensorDataset(torch.Tensor(X_valid),  torch.Tensor(Y_vali
 X_test = np.transpose(X_test, (0, 3, 1, 2))
 test_set = utils.data.TensorDataset(torch.Tensor(X_test),  torch.Tensor(Y_test))
 ```
-
+The parameters of the algorithms are set here.
 ```python
 n_classes = 2
 Model = smp.EfficientUnetPlusPlus(encoder_name='timm-efficientnet-b0', encoder_weights="imagenet", in_channels=3, classes=n_classes)
@@ -135,10 +53,12 @@ scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, threshol
 data_loader_training = torch.utils.data.DataLoader(dataset=training_set, batch_size=batchsize, shuffle=True)
 data_loader_valid = torch.utils.data.DataLoader(dataset=valid_set, batch_size=batchsize, shuffle=True)
 data_loader_test = torch.utils.data.DataLoader(dataset=test_set, batch_size=batchsize, shuffle=True)
-```
 
-```python
 num_epochs = 20
+```
+The segmentation model runs through the segmentation model over the training dataset and validation dataset. Using the dice loss of the 'metrics.py' file, the dice score is calculated. The loss and dice score per epoch are stored for evaluation purposes.
+```python
+
 #one example of the validation outputs
 outputs = []
 outputs_val = []
@@ -191,7 +111,7 @@ for epoch in range(num_epochs):
     outputs_val.append((epoch, loss_value, avg_dice))
     print("Epoch", epoch, "Validation loss:", loss_value, "Validation dice:",avg_dice ) 
 ```
-
+This funnction is used to decode the segmentation output into a regular rgb image. This function is enables the visualisation of the resulting image of the model
 ```python
 # Define the helper function
 def decode_segmap(image, nc=2):
@@ -209,7 +129,7 @@ def decode_segmap(image, nc=2):
   rgb = np.stack([r, g, b], axis=2)
   return rgb
 ```
-
+This function enables fast visualisation of the input images into a subplot
 ```python
 #show img+recon
 def show(imgs):
@@ -220,7 +140,7 @@ def show(imgs):
         axs[0, i].imshow(img)
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
  ```
- 
+ Here the model is run on the test dataset
  ```python
  Model.eval()
  outputs_test = []
@@ -235,12 +155,11 @@ def show(imgs):
         outputs_test.append((i, img, decoded,label.type(torch.LongTensor).to("cpu")))
         avg_dice += dice_score(input = decoded, target = label.type(torch.LongTensor).to("cpu").squeeze(1), use_weights=True)
         count+=1
-        print("Image", i, "Loss:", loss.item()) 
         i+=1
 avg_dice = avg_dice/count 
 print(avg_dice.item())
 ```
-
+This part shows some examples of the results of the model on the test dataset
 ```python
 i = 5
 orig = outputs_test[i][1].cpu().reshape(3,512,512).numpy().transpose(1,2,0)
@@ -258,7 +177,7 @@ img3 = decode_segmap(preds3)
 show([orig,img,label])
 show([orig3,img3,label3])
 ```
-
+With these lines the loss and dice score over the number of epochs is visualised into a graph. This allows for fast evaluation of training of the model
 ```python
 x = np.array(range(1,len(outputs)+1))
 y = np.zeros(len(outputs))
