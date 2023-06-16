@@ -212,7 +212,15 @@ plt.show()
 
 ## Stent Prediction
 To view the main stent prediction model, see the code inside 'stent_size_prediction.ipynb'
-```python
 
+Import libraries to be used
+```python
+import pandas as pd
+from sklearn.model_selection import train_test_split
+import autogluon
+from autogluon.tabular import TabularPredictor
+import numpy as np
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+import sklearn.metrics as metrics
 ```
 
