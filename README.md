@@ -159,7 +159,7 @@ def show(imgs):
 avg_dice = avg_dice/count 
 print(avg_dice.item())
 ```
-This part shows some examples of the results of the model on the test dataset
+This part visualises some examples of the results of the model on the test dataset
 ```python
 i = 5
 orig = outputs_test[i][1].cpu().reshape(3,512,512).numpy().transpose(1,2,0)
@@ -177,7 +177,7 @@ img3 = decode_segmap(preds3)
 show([orig,img,label])
 show([orig3,img3,label3])
 ```
-With these lines the loss and dice score over the number of epochs is visualised into a graph. This allows for fast evaluation of training of the model
+With these lines the loss and dice score over the number of epochs is visualised into a graph. This allows for fast evaluation of the training of the model
 ```python
 x = np.array(range(1,len(outputs)+1))
 y = np.zeros(len(outputs))
