@@ -223,7 +223,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import sklearn.metrics as metrics
 ```
-Load the data
+Load and pre-process the data
 ```python
 path = 'Dataset.xlsx'
 data = pd.read_excel(path)
@@ -253,7 +253,7 @@ correlations = features.corrwith(data[label])
 sorted_correlations = correlations.abs().sort_values(ascending=False)
 print(sorted_correlations)
 ```
-View the most important features by Autogluon
+This line enables us to view the most important features which affect the model
 ```python
 predictor.feature_importance(data=train_data)
 ```
@@ -278,14 +278,13 @@ print(precision_score(y_true, y_pred, average="weighted"))# 0.893581081081081
 print(recall_score(y_true, y_pred)) # 0.18181818181818182
 print(precision_score(y_true, y_pred)) # 1.0
 ```
-Visualize the ROC curve
+Visualize the ROC curve to assess the performance of the model
 ```python
 probs = predictor.predict_proba(test_data)
 preds = probs[1]
 fpr, tpr, threshold = metrics.roc_curve(test_data[label], preds)
 roc_auc = metrics.auc(fpr, tpr)
 
-# method I: plt
 import matplotlib.pyplot as plt
 plt.title('Receiver Operating Characteristic')
 plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
@@ -297,7 +296,9 @@ plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
 plt.show()
 ```
-Predict the stent size
+Example prediciton of the stent size using our model.
+Random patient data is used on someone who would have a stenosis on a side branch. 
+The range of stent diameters and lengths with the highest chance of a '0' classification is given
 ```python
 patient_data = test_data.iloc[0]
 patient_data = patient_data.drop('Vessels ISR')
