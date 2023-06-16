@@ -257,4 +257,85 @@ View the most important features by Autogluon
 ```python
 predictor.feature_importance(data=train_data)
 ```
+Finally we choose RandomForestEntr as our prediction model
+```python
+# predictor.delete_models(models_to_keep='best', dry_run=False) 
+# predictor.predict(test_data, model='WeightedEnsemble_L2')
+predictor.delete_models(models_to_keep='RandomForestEntr', dry_run=False) 
+predictor.predict(test_data)
+print([predictor.info()])
+```
+Visualize the confusion matrix, recall & precision and weighted recall & precision
+```python
+y_true = test_data[label]  # true label
+y_pred = predictor.predict(test_data)  # predicted label
+from sklearn.metrics import confusion_matrix
+confusion_matrix(y_true, y_pred)
+results = predictor.fit_summary()
+print(results)
+print(recall_score(y_true, y_pred, average='weighted')) # 0.8783783783783784
+print(precision_score(y_true, y_pred, average="weighted"))# 0.893581081081081
+print(recall_score(y_true, y_pred)) # 0.18181818181818182
+print(precision_score(y_true, y_pred)) # 1.0
+```
+Visualize the ROC curve
+```python
+probs = predictor.predict_proba(test_data)
+preds = probs[1]
+fpr, tpr, threshold = metrics.roc_curve(test_data[label], preds)
+roc_auc = metrics.auc(fpr, tpr)
+
+# method I: plt
+import matplotlib.pyplot as plt
+plt.title('Receiver Operating Characteristic')
+plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+plt.legend(loc = 'lower right')
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0, 1])
+plt.ylim([0, 1])
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
+plt.show()
+```
+Predict the stent size
+```python
+patient_data = test_data.iloc[0]
+patient_data = patient_data.drop('Vessels ISR')
+lesion_length = patient_data['lesion length in SB (mm)']
+patient_data['lesion length in MB (mm)'] = float("nan")
+patient_data['Stent Length in MB (mm)'] = float("nan")
+patient_data['Stent Diameter in MB (mm)'] = float("nan")
+patient_data['Pre-%DS in MB'] = float("nan")
+patient_data['Pre-MLD in MB (mm)'] = float("nan")
+patient_data['RVD in MB (mm)'] = float("nan")
+
+all_preds = []
+all_lengths = []
+all_diams = []
+acceptable_lengths = []
+acceptable_diameters = []
+patient_data = patient_data.to_frame().transpose()
+
+for i in np.arange(lesion_length-5, lesion_length+5,0.25):
+    patient_data['Stent Length in SB (mm)'] = i
+    for j in np.arange(2,5,0.25):
+         patient_data['Stent Diameter in SB (mm)'] = j
+         probs = predictor.predict_proba(patient_data)
+         #get confidence score
+         preds = probs[0].item()
+         all_preds.append(preds)
+         all_lengths.append(i)
+         all_diams.append(j)
+max_confidence = max(all_preds)
+
+best_diams = []
+best_lengths = []
+indices_best = [i for i, j in enumerate(all_preds) if j == max_confidence]
+for i in indices_best:
+    best_diams.append(all_diams[i])
+    best_lengths.append(all_lengths[i])
+print("The recommended stent length is ",min(best_lengths),'<= x <=', max(best_lengths))
+print("The recommended stent diameter is",min(best_diams), '<= x <=',max(best_diams))
+print("The confidence score is", round(max_confidence*100,2),"%")    
+```
 
